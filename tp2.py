@@ -62,8 +62,7 @@ def buscar_por_codigo(catalogo, codigo):
     return -1
 
 def buscar_por_nombre(catalogo, texto):
-    """Busca productos cuyo nombre contiene 'texto' (búsqueda secuencial,
-    parcial, sin distinguir mayúsculas de minúsculas).
+    """Busca productos en el catálogo cuyo nombre contiene 'texto' (búsqueda secuencial).
     Pre:  ---
     Post: devuelve una lista con los productos del catálogo que coinciden
     (puede ser vacía). No modifica el catálogo.
@@ -78,13 +77,45 @@ def buscar_por_nombre(catalogo, texto):
 
 def formato_de_precio(valor):
     """Establece el tipeo de moneda argentina a un número: 2 decimales, punto de
-    miles y coma decimal.
+    miles y coma decimal para los centavos.
     Pre:  valor es un número.
     Post: devuelve un string con el valor formateado, sin el signo '$'.
     """
     texto = f"{valor:,.2f}"
     texto = texto.replace(",", "_").replace(".", ",").replace("_", ".")
     return texto
+
+def ordenar(lista, campo, descendente):
+    """Ordena 'lista' (la lista de listas) en el lugar, por selección,
+    según el índice de campo indicado y el sentido pedido.
+    Pre:  'campo' es un índice válido para cada elemento de 'lista'.
+    Post: 'lista' queda ordenada ascendente por lista[i][campo] si
+    descendente es False o descendente si es True. No devuelve nada.
+    """
+    for i in range(len(lista) - 1):
+        p = buscar_extremo(lista, i, len(lista) - 1, campo, descendente)
+        lista[p], lista[i] = lista[i], lista[p]
+ 
+def buscar_extremo(lista, desde, hasta, campo, descendente):
+    """Busca la posición del mínimo (o máximo, si descendente) en
+    lista[desde]..lista[hasta] inclusive, comparando por 'campo'.
+    Pre: 0 <= desde <= hasta < len(lista); 'campo' es un índice válido
+    para cada elemento de 'lista'.
+    Post: devuelve la posición del elemento extremo (mínimo si descendente
+    es False, máximo si es True). No modifica "lista".
+    """
+    extremo = lista[desde][campo]
+    p = desde
+    for i in range(desde + 1, hasta + 1):
+        if descendente:
+            if lista[i][campo] > extremo:
+                extremo = lista[i][campo]
+                p = i
+        else:
+            if lista[i][campo] < extremo:
+                extremo = lista[i][campo]
+                p = i
+    return p  
 
 def pedir_entero_en_rango(mensaje, minimo, maximo):
     """Solicita al usuario un número entero dentro de un rango, reintentando
