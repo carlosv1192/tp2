@@ -78,6 +78,21 @@ def buscar_por_codigo(catalogo, codigo):
             izq = medio + 1
     return -1
 
+def buscar_por_nombre(catalogo, texto):
+    """Busca productos cuyo nombre contiene 'texto' (búsqueda secuencial,
+    parcial, sin distinguir mayúsculas de minúsculas).
+    Pre:  ---
+    Post: devuelve una lista con los productos del catálogo que coinciden
+    (puede ser vacía). No modifica el catálogo.
+    """
+    producto_coincidente = []
+    texto_buscado = texto.lower()
+    for i in range(len(catalogo)):
+        nombre_producto = catalogo[i][NOMBRE].lower()
+        if texto_buscado in nombre_producto:
+            producto_coincidente.append(catalogo[i])
+    return producto_coincidente
+
 def formato_de_precio(valor):
     """Establece el tipeo de moneda argentina a un número: 2 decimales, punto de
     miles y coma decimal.
