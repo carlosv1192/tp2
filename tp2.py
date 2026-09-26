@@ -38,23 +38,6 @@ cantidad_credito = 0
 # NO está ordenado por código: ordenarlo al iniciar el
 # programa es parte del trabajo (y condición para la búsqueda binaria).
 # =====================================================================
-def catalogo_inicial():
-    """Devuelve el catálogo de partida del kiosco (lista de listas).
-    Pre: 
-    Post: devuelve una lista de productos
-    """
-    return [
-        [305, "Alfajor triple",           1, 1500.0, 24],
-        [112, "Agua saborizada 500 ml",   2, 1900.0, 10],
-        [421, "Cuaderno",                 4, 10000.0, 15],
-        [208, "Galletitas surtidas",      3, 2800.0,  8],
-        [117, "Gaseosa 1.5 L",            2, 4000.0,  6],
-        [302, "Chicles",                  1,  700.0, 40],
-        [415, "Birome azul",              4, 1200.0,  3],
-        [210, "Fideos 500 g",             3, 2100.0, 12],
-        [310, "Chocolate con leche",      1, 3200.0,  4],
-        [119, "Jugo en polvo",            2,  900.0, 30],
-    ]
 
 def buscar_por_codigo(catalogo, codigo):
     """Busca un producto por código con BÚSQUEDA BINARIA.
