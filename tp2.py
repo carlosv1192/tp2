@@ -379,28 +379,39 @@ def mostrar_menu_principal():
     """
     print("\n===||| KIOSCO EL CAMPUS |||===")
     print("1) Registrar una venta.")
-    print("2) Ver resumen del día.")
-    print("3) Cerrar caja y salir.")
-    opcion = pedir_entero_en_rango("Elija una opción: ", 1, 3)
+    print("2) Consultar el catálogo.")
+    print("3) Ver resumen del día.")
+    print("4) Ranking de productos más vendidos.")
+    print("5) Tabla categoría x medio de pago.")
+    print("6) Cerrar caja y salir")
+
+    opcion = pedir_entero_en_rango("Elija una opción: ", 1, 6)
     return opcion
 
 # PROGRAMA PRINCIPAL
 def menu():
     """Punto de entrada del programa: menú principal del kiosco."""
+    catalogo = catalogo_inicial
+    ventas =[]
     opcion = 0
-    global total_recaudado, cantidad_ventas, venta_mas_alta
-    global total_golosinas, total_bebidas, total_almacen, total_libreria
-    global cantidad_efectivo, cantidad_debito, cantidad_credito
-    while opcion != 3:
+    while opcion != 6:
         opcion = mostrar_menu_principal()
         if opcion == 1:
             registrar_venta()
         elif opcion == 2:
             mostrar_resumen_dia()
+        elif opcion == 3:
+            mostrar_resumen_dia(catalogo, ventas)
+        elif opcion == 4:
+            ranking = armar_ranking(...); ordenar(ranking, 1, True)
+        elif opcion == 5:
+            matriz = armar_matriz(...)        
         else:
             confirmar = pedir_confirmacion("¿Confirma el cierre de caja? (S/N): ")
             if confirmar:
                 mostrar_resumen_dia()
+                print(ranking)
+                print(reposicion)
                 cuenta_regresiva(5)
             else:
                 opcion = 0 #Como dijo que no, lo volvemos al menú principal.
