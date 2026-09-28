@@ -20,6 +20,7 @@ MEDIOS_PAGO = ["Efectivo", "Débito", "Crédito"]
 STOCK_MINIMO = 5 # por debajo de este, el producto va a reposición
 CODIGO, NOMBRE, CATEGORIA, PRECIO, STOCK = 0, 1, 2, 3, 4
 NUMERO, CODIGO_VENTA, CANTIDAD, MEDIO_PAGO, IMPORTE_FINAL = 0, 1, 2, 3, 4
+RANKING_NOMBRE, RANKING_UNIDADES, RANKING_IMPORTE = 0, 1, 2
 
 total_recaudado = 0
 cantidad_ventas = 0
@@ -41,13 +42,9 @@ cantidad_credito = 0
 
 def buscar_por_codigo(catalogo, codigo):
     """Busca un producto por código con BÚSQUEDA BINARIA.
-
-    Pre:  catalogo es una lista de productos ORDENADA por código (ascendente).
+    Pre:  catalogo es una lista de productos ordenada por código (ascendente).
     Post: devuelve la posición del producto con ese código, o -1 si no está.
-          No modifica el catálogo.
-
-    Es la búsqueda binaria de la Clase 8, adaptada: en lugar de comparar el
-    elemento completo, se compara el campo CODIGO de cada producto.
+    No modifica el catálogo.
     """
     izq = 0
     der = len(catalogo) - 1
@@ -97,10 +94,10 @@ def ordenar(lista, campo, descendente):
         lista[p], lista[i] = lista[i], lista[p]
  
 def buscar_extremo(lista, desde, hasta, campo, descendente):
-    """Busca la posición del mínimo (o máximo, si descendente) en
-    lista[desde]..lista[hasta] inclusive, comparando por 'campo'.
-    Pre: 0 <= desde <= hasta < len(lista); 'campo' es un índice válido
-    para cada elemento de 'lista'.
+    """Busca la posición del mínimo o máximo en
+    lista[desde]..lista[hasta] inclusive; compara por "campo".
+    Pre: 0 <= desde <= hasta < len(lista). "campo" es un índice válido
+    para cada elemento de "lista".
     Post: devuelve la posición del elemento extremo (mínimo si descendente
     es False, máximo si es True). No modifica "lista".
     """
@@ -116,6 +113,48 @@ def buscar_extremo(lista, desde, hasta, campo, descendente):
                 extremo = lista[i][campo]
                 p = i
     return p  
+
+def armar_ranking(catalogo, ventas):
+    """Elabora una tabla de productos vendidos.
+    Pre:  recibe la lista de catálogo y la de ventas realizadas
+    Post: devuelve una lista de [nombre, unidades_vendidas, importe_total],
+    un elemento por producto con al menos una venta.
+    """
+    lista_de_ranking = []
+    for i in range(len(ventas)):
+        venta = ventas[i]
+        posicion_producto = buscar_por_codigo(catalogo, venta[CODIGO_VENTA])
+        nombre_producto = catalogo[posicion_producto][NOMBRE]
+        posicion_en_ranking = buscar_en_ranking(lista_de_ranking, nombre_producto)
+        if posicion_en_ranking == -1:
+            lista_de_ranking.append([nombre_producto, venta[CANTIDAD], venta[IMPORTE_FINAL]])
+        else:
+            lista_de_ranking[posicion_en_ranking][RANKING_UNIDADES] += venta[CANTIDAD]
+            lista_de_ranking[posicion_en_ranking][RANKING_IMPORTE] += venta[IMPORTE_FINAL]
+    return lista_de_ranking
+
+def buscar_en_ranking(ranking, nombre):
+    """Busca el nombre del producto ingresado entre los productos ya cargados en el ranking.
+    Pre:  recibe una lista y un nombre a buscar
+    Post: devuelve la posición donde está ese nombre en "ranking"
+    o -1 si todavía no se agregó.
+    """
+    for i in range(len(ranking)):
+        if ranking[i][RANKING_NOMBRE] == nombre:
+            return i
+    return -1
+
+def productos_a_reponer(catalogo):
+    """Busca los productos con stock por debajo del mínimo.
+    Pre: recibe el catálogo con productos y su stock actual.
+    Post: devuelve la lista de productos del catálogo con stock 
+    menor a 5. Aún no están ordenados.
+    """
+    mercancia_a_reponer = []
+    for i in range(len(catalogo)):
+        if catalogo[i][STOCK] < STOCK_MINIMO:
+            mercancia_a_reponer.append(catalogo[i])
+    return mercancia_a_reponer
 
 def pedir_entero_en_rango(mensaje, minimo, maximo):
     """Solicita al usuario un número entero dentro de un rango, reintentando
