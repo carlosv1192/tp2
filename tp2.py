@@ -1,6 +1,6 @@
 """
 PROGRAMACIÓN 1 — LICENCIATURA EN SISTEMAS
-Trabajo Práctico Nro. 1 — Sistema de gestión de ventas: Kiosco "El Campus"
+Trabajo Práctico Nro. 2 — Sistema de gestión de ventas: Kiosco "El Campus"
 
 Integrantes del grupo:
     - Becerra, Facundo Daniel
@@ -21,6 +21,8 @@ STOCK_MINIMO = 5 # por debajo de este, el producto va a reposición
 CODIGO, NOMBRE, CATEGORIA, PRECIO, STOCK = 0, 1, 2, 3, 4
 NUMERO, CODIGO_VENTA, CANTIDAD, MEDIO_PAGO, IMPORTE_FINAL = 0, 1, 2, 3, 4
 RANKING_NOMBRE, RANKING_UNIDADES, RANKING_IMPORTE = 0, 1, 2
+TOPE_DE_CODIGO = 9999
+TOPE_DE_STOCK = 9999
 
 total_recaudado = 0
 cantidad_ventas = 0
@@ -33,12 +35,35 @@ cantidad_efectivo = 0
 cantidad_debito = 0
 cantidad_credito = 0
 
-#CATÁLOGO INICIAL
-# Lista de productos. Cada producto es una LISTA (mutable: el stock cambia):
-#     [codigo, nombre, categoria, precio, stock]
-# NO está ordenado por código: ordenarlo al iniciar el
-# programa es parte del trabajo (y condición para la búsqueda binaria).
-# =====================================================================
+def catalogo_inicial():
+    """Devuelve el catálogo de partida del kiosco (lista de listas)."""
+    return [
+        [305, "Alfajor triple",           1, 1500.0, 24],
+        [112, "Agua saborizada 500 ml",   2, 1900.0, 10],
+        [421, "Cuaderno",                 4, 10000.0, 15],
+        [208, "Galletitas surtidas",      3, 2800.0,  8],
+        [117, "Gaseosa 1.5 L",            2, 4000.0,  6],
+        [302, "Chicles",                  1,  700.0, 40],
+        [415, "Birome azul",              4, 1200.0,  3],
+        [210, "Fideos 500 g",             3, 2100.0, 12],
+        [310, "Chocolate con leche",      1, 3200.0,  4],
+        [119, "Jugo en polvo",            2,  900.0, 30],
+    ]
+
+def mostrar_catalogo(catalogo):
+    """Permite ver el catálogo en formato de tabla.
+    Recibe: el catálogo (lista de productos).
+    Pre: cada producto es una lista [codigo, nombre, categoria, precio, stock].
+    Post: imprime un renglón por producto, en el orden en que vienen en la lista.
+    No modifica el catálogo ni devuelve nada.
+    """
+    print("\n****** CATÁLOGO DEL QUIOSCO ******")
+    print("Código | Nombre | Categoría | Precio | Stock")
+    for i in range(len(catalogo)):
+        producto = catalogo[i]
+        categoria = CATEGORIAS[producto[CATEGORIA] - 1]
+        precio = "$" + formato_de_precio(producto[PRECIO])
+        print(f"{producto[CODIGO]},{producto[NOMBRE]},{categoria},{precio},{producto[STOCK]}")
 
 def buscar_por_codigo(catalogo, codigo):
     """Busca un producto por código con BÚSQUEDA BINARIA.
@@ -60,7 +85,7 @@ def buscar_por_codigo(catalogo, codigo):
 
 def buscar_por_nombre(catalogo, texto):
     """Busca productos en el catálogo cuyo nombre contiene 'texto' (búsqueda secuencial).
-    Pre:  ---
+    Pre: texto no está vacío.
     Post: devuelve una lista con los productos del catálogo que coinciden
     (puede ser vacía). No modifica el catálogo.
     """
@@ -83,11 +108,11 @@ def formato_de_precio(valor):
     return texto
 
 def ordenar(lista, campo, descendente):
-    """Ordena 'lista' (la lista de listas) en el lugar, por selección,
+    """Ordena "lista" (la lista de listas) en el lugar, por selección,
     según el índice de campo indicado y el sentido pedido.
-    Pre:  'campo' es un índice válido para cada elemento de 'lista'.
-    Post: 'lista' queda ordenada ascendente por lista[i][campo] si
-    descendente es False o descendente si es True. No devuelve nada.
+    Pre: que "campo" sea un índice válido para cada elemento de "lista".
+    Post: "lista" queda ordenada ascendentemente por lista[i][campo] si
+    descendente es False o descendentemente si es True. No devuelve nada.
     """
     for i in range(len(lista) - 1):
         p = buscar_extremo(lista, i, len(lista) - 1, campo, descendente)
@@ -144,17 +169,92 @@ def buscar_en_ranking(ranking, nombre):
             return i
     return -1
 
+def ranking_ordenado(catalogo, ventas):
+    """Confecciona el ranking de productos vendidos y lo ordena por unidades.
+    Recibe: el catálogo y la lista de ventas.
+    Pre: el catálogo está ordenado por código (ascendente). Asimismo, las ventas
+    corresponden a un producto del catálogo.
+    Post: devuelve una lista con [nombre, unidades, importe] ordenada de mayor
+    a menor por unidades vendidas (estará vacía si no hay ventas).
+    """
+    ranking = armar_ranking(catalogo, ventas)
+    ordenar(ranking, RANKING_UNIDADES, True)
+    return ranking
+
 def productos_a_reponer(catalogo):
     """Busca los productos con stock por debajo del mínimo.
     Pre: recibe el catálogo con productos y su stock actual.
     Post: devuelve la lista de productos del catálogo con stock 
-    menor a 5. Aún no están ordenados.
+    menor a STOCK_MINIMO. Aún no están ordenados.
     """
     mercancia_a_reponer = []
     for i in range(len(catalogo)):
         if catalogo[i][STOCK] < STOCK_MINIMO:
             mercancia_a_reponer.append(catalogo[i])
     return mercancia_a_reponer
+
+def reposicion_ordenada(catalogo):
+    """Elabora la lista de productos a reponer ordenada por stock.
+    Pre: debe recibir el catálogo.
+    Post: devuelve los productos que tengan stock menor a STOCK_MINIMO, ordenados de
+    menor a mayor. No modifica el orden del catálogo.
+    """
+    lista_de_reposicion = productos_a_reponer(catalogo)
+    ordenar(lista_de_reposicion, STOCK, False)
+    return lista_de_reposicion
+
+def productos_de_categoria(catalogo, categoria):
+    """Busca secuencialmente los productos de una categoría.
+    Recibe: el catálogo y el número de categoría.
+    Pre: categoria es un entero entre 1 y 4.
+    Post: devuelve una lista con los productos de esa categoría
+    (puede resultar vacía). No modifica el catálogo.
+    """
+    productos = []
+    for i in range(len(catalogo)):
+        if catalogo[i][CATEGORIA] == categoria:
+            productos.append(catalogo[i])
+    return productos
+
+def pedir_texto_no_vacio(mensaje):
+    """Pide un texto/nombre y reintenta hasta que tenga al menos un carácter
+    que no sea espacio o vacío.
+    Recibe: mensaje (str) a mostrar.
+    Devuelve: el texto ingresado, sin espacios sobrantes al inicio ni al final.
+    """
+    texto = input(mensaje).strip()
+    while texto == "":
+        print("Entrada inválida. No puede estar vacío.")
+        texto = input(mensaje).strip()
+    return texto
+
+def formatear_nombre(nombre):
+    """Deja el texto solo con la primera letra en mayúscula.
+    Recibe: nombre (str).
+    Pre: nombre no debe estar vacío y no tiene espacios sobrantes.
+    Post: devuelve el nombre con su primera letra en mayúscula y el resto
+    sin cambios.
+    """
+    return nombre[0].upper() + nombre[1:]
+
+def agregar_producto(catalogo):
+    """Permite ingresar los datos de un producto nuevo, los valida y lo agrega al catálogo.
+    Recibe: el catálogo.
+    Pre: el catálogo está ordenado por código (ascendente).
+    Post: el catálogo tiene un producto más, sin código repetido; además, sigue
+    ordenado por código. No devuelve nada.
+    """
+    codigo = pedir_entero_en_rango("Código del nuevo producto: ", 1, TOPE_DE_CODIGO)
+    while buscar_por_codigo(catalogo, codigo) != -1:
+        print("Ya existe un producto con ese código. Ingrese otro código diferente.")
+        codigo = pedir_entero_en_rango("Código del nuevo producto: ", 1, TOPE_DE_CODIGO)
+    nombre = formatear_nombre(pedir_texto_no_vacio("Nombre del producto: "))
+    categoria = categoria_producto()
+    precio = pedir_real_en_rango("Precio del producto: ", 0)
+    stock = pedir_entero_en_rango("Stock inicial: ", 0, TOPE_DE_STOCK)
+    catalogo.append([codigo, nombre, categoria, precio, stock])
+    ordenar(catalogo, CODIGO, False)
+    print(f"¡Producto '{nombre}' agregado exitosamente al catálogo!")
 
 def pedir_entero_en_rango(mensaje, minimo, maximo):
     """Solicita al usuario un número entero dentro de un rango, reintentando
@@ -443,7 +543,7 @@ def mostrar_menu_principal():
     """Muestra las opciones del menú principal y devuelve la opción
     elegida por el usuario, ya validada.
     Recibe: nada.
-    Devuelve: un número entero entre 1 y 3, que representa la opción elegida.
+    Devuelve: un número entero entre 1 y 6, que representa la opción elegida.
     """
     print("\n===||| KIOSCO EL CAMPUS |||===")
     print("1) Registrar una venta.")
@@ -456,30 +556,78 @@ def mostrar_menu_principal():
     opcion = pedir_entero_en_rango("Elija una opción: ", 1, 6)
     return opcion
 
+def menu_catalogo(catalogo):
+    """Submenú que permite acceder a funciones pertenecientes al catálogo. 
+    Se repite hasta elegir la opción 6.
+    Recibe: el catálogo.
+    Pre: el catálogo está ordenado por código (ascendente).
+    Post: el catálogo podría haber adquirido productos nuevos, pero sigue ordenado
+    por código. No devuelve nada.
+    """
+    opcion = 0
+    while opcion != 6:
+        print("\n<<< CATÁLOGO DEL QUIOSCO >>>")
+        print("1) Mostrar inventario completo.")
+        print("2) Buscar por código.")
+        print("3) Buscar por nombre.")
+        print("4) Inventario por categoría.")
+        print("5) Agregar un producto para la venta.")
+        print("6) Volver al menú principal.")
+        opcion = pedir_entero_en_rango("Elija una opción: ", 1, 6)
+
+        if opcion == 1:
+            mostrar_catalogo(catalogo)
+        elif opcion == 2:
+            codigo = pedir_entero_en_rango("Código a buscar: ", 1, TOPE_DE_CODIGO)
+            posicion = buscar_por_codigo(catalogo, codigo)
+            if posicion == -1:
+                print("No existe un producto con ese código.")
+            else:
+                mostrar_catalogo([catalogo[posicion]])
+        elif opcion == 3:
+            texto = pedir_texto_no_vacio("¿Qué busca? Ingréselo: ")
+            coincidencias = buscar_por_nombre(catalogo, texto)
+            if len(coincidencias) == 0:
+                print("No hay productos que coincidan con ese texto.")
+            else:
+                mostrar_catalogo(coincidencias)
+        elif opcion == 4:
+            categoria = categoria_producto()
+            productos = productos_de_categoria(catalogo, categoria)
+            if len(productos) == 0:
+                print("No hay productos en esa categoría.")
+            else:
+                mostrar_catalogo(productos)
+                cantidad_a_reposicion = len(productos_a_reponer(productos))
+                print(f"Productos con stock por debajo del mínimo ({STOCK_MINIMO}): {cantidad_a_reposicion}")
+        elif opcion == 5:
+            agregar_producto(catalogo)
+
 # PROGRAMA PRINCIPAL
 def menu():
     """Punto de entrada del programa: menú principal del kiosco."""
-    catalogo = catalogo_inicial
-    ventas =[]
+    catalogo = catalogo_inicial()
+    ordenar(catalogo, CODIGO, False)
+    ventas = []
     opcion = 0
     while opcion != 6:
         opcion = mostrar_menu_principal()
         if opcion == 1:
-            registrar_venta()
+            registrar_venta(catalogo, ventas)
         elif opcion == 2:
-            mostrar_resumen_dia()
+            menu_catalogo(catalogo)
         elif opcion == 3:
             mostrar_resumen_dia(catalogo, ventas)
         elif opcion == 4:
-            ranking = armar_ranking(...); ordenar(ranking, 1, True)
+            mostrar_ranking(ranking_ordenado(catalogo, ventas))
         elif opcion == 5:
-            matriz = armar_matriz(...)        
+            mostrar_matriz(armar_matriz(catalogo, ventas))        
         else:
             confirmar = pedir_confirmacion("¿Confirma el cierre de caja? (S/N): ")
             if confirmar:
-                mostrar_resumen_dia()
-                print(ranking)
-                print(reposicion)
+                mostrar_resumen_dia(catalogo, ventas)
+                mostrar_ranking(ranking_ordenado(catalogo, ventas))
+                mostrar_reposicion(reposicion_ordenada(catalogo))
                 cuenta_regresiva(5)
             else:
                 opcion = 0 #Como dijo que no, lo volvemos al menú principal.
