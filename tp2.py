@@ -562,30 +562,75 @@ def determinar_medio_mas_utilizado(cant_efectivo, cant_debito, cant_credito):
         nombre = "Tarjeta de crédito"
     return nombre
 
-def mostrar_resumen_dia():
-    """Muestra el resumen de ventas del día. No calcula nada directamente,
-    usa calcular_promedio_venta y determinar_medio_mas_utilizado para eso.
-    Recibe: nada.
-    Devuelve: nada, solo imprime en pantalla.
+def calcular_datos_resumen(catalogo, ventas):
+    """Calcula los datos del resumen recorriendo el historial de ventas.
+    Recibe el catálogo ordenado por código y un historial no vacío.
+    Pre: cada venta corresponde a un producto del catálogo y a un medio de pago válido.
+    Post: devuelve total, promedio, venta más alta, totales por categoría,
+    cantidades por medio de pago y el medio más utilizado. No imprime ni modifica datos.
+    """
+    total_recaudado = 0
+    totales_por_categoria = []
+    cantidades_por_medio = []
+    for i in range(len(CATEGORIAS)):
+        totales_por_categoria.append(0)
+    for i in range(len(MEDIOS_PAGO)):
+        cantidades_por_medio.append(0)
+
+    venta_mas_alta = ventas[0]
+    for i in range(len(ventas)):
+        venta = ventas[i]
+        total_recaudado += venta[IMPORTE_FINAL]
+        cantidades_por_medio[venta[MEDIO_PAGO] - 1] += 1
+
+        posicion_producto = buscar_por_codigo(catalogo, venta[CODIGO_VENTA])
+        producto = catalogo[posicion_producto]
+        totales_por_categoria[producto[CATEGORIA] - 1] += venta[IMPORTE_FINAL]
+        if venta[IMPORTE_FINAL] > venta_mas_alta[IMPORTE_FINAL]:
+            venta_mas_alta = venta
+
+    posicion_producto_mayor = buscar_por_codigo(catalogo, venta_mas_alta[CODIGO_VENTA])
+    nombre_producto_mayor = catalogo[posicion_producto_mayor][NOMBRE]
+    promedio = calcular_promedio_venta(total_recaudado, len(ventas))
+    medio_mas_usado = determinar_medio_mas_utilizado(
+        cantidades_por_medio[0], cantidades_por_medio[1], cantidades_por_medio[2]
+    )
+    return (
+        total_recaudado,
+        promedio,
+        venta_mas_alta[NUMERO],
+        nombre_producto_mayor,
+        venta_mas_alta[IMPORTE_FINAL],
+        totales_por_categoria,
+        cantidades_por_medio,
+        medio_mas_usado,
+    )
+
+def mostrar_resumen(catalogo, ventas):
+    """Muestra el resumen del día a partir del historial de ventas.
+    Recibe el catálogo ordenado por código y la lista de ventas.
+    Pre: cada venta corresponde a un producto del catálogo.
+    Post: imprime el resumen, sin modificar el catálogo ni el historial.
     """
     print("***********************")
     print("=== RESUMEN DEL DÍA ===")
-    if cantidad_ventas == 0:
+    if len(ventas) == 0:
         print("Todavía no se registraron ventas en el día.")
+        print("***********************")
         return
-    promedio = calcular_promedio_venta(total_recaudado, cantidad_ventas)
-    medio_mas_usado = determinar_medio_mas_utilizado(cantidad_efectivo, cantidad_debito, cantidad_credito)
-    print(f"Cantidad de ventas: {cantidad_ventas}")
-    print(f"Total recaudado: ${round(total_recaudado, 2)}")
-    print(f"Importe promedio por venta: ${round(promedio, 2)}")
-    print(f"Venta más alta del día: ${round(venta_mas_alta, 2)}")
-    print(f"Total en Golosinas: ${round(total_golosinas, 2)}")
-    print(f"Total en Bebidas: ${round(total_bebidas, 2)}")
-    print(f"Total en Almacén: ${round(total_almacen, 2)}")
-    print(f"Total en Librería: ${round(total_libreria, 2)}")
-    print(f"Ventas en efectivo: {cantidad_efectivo}")
-    print(f"Ventas con débito: {cantidad_debito}")
-    print(f"Ventas con crédito: {cantidad_credito}")
+
+    (total_recaudado, promedio, numero_venta_mayor, nombre_producto_mayor,
+     importe_venta_mayor, totales_por_categoria, cantidades_por_medio,
+     medio_mas_usado) = calcular_datos_resumen(catalogo, ventas)
+    print(f"Cantidad de ventas: {len(ventas)}")
+    print(f"Total recaudado: ${formato_de_precio(total_recaudado)}")
+    print(f"Importe promedio por venta: ${formato_de_precio(promedio)}")
+    print(f"Venta más alta: N.º {numero_venta_mayor} - {nombre_producto_mayor} "
+          f"(${formato_de_precio(importe_venta_mayor)})")
+    for i in range(len(CATEGORIAS)):
+        print(f"Total en {CATEGORIAS[i]}: ${formato_de_precio(totales_por_categoria[i])}")
+    for i in range(len(MEDIOS_PAGO)):
+        print(f"Ventas con {MEDIOS_PAGO[i].lower()}: {cantidades_por_medio[i]}")
     print(f"Medio de pago más utilizado: {medio_mas_usado}")
     print("***********************")
 
@@ -679,7 +724,7 @@ def menu():
         elif opcion == 2:
             menu_catalogo(catalogo)
         elif opcion == 3:
-            mostrar_resumen_dia(catalogo, ventas)
+            mostrar_resumen(catalogo, ventas)
         elif opcion == 4:
             mostrar_ranking(ranking_ordenado(catalogo, ventas))
         elif opcion == 5:
@@ -687,7 +732,7 @@ def menu():
         else:
             confirmar = pedir_confirmacion("¿Confirma el cierre de caja? (S/N): ")
             if confirmar:
-                mostrar_resumen_dia(catalogo, ventas)
+                mostrar_resumen(catalogo, ventas)
                 mostrar_ranking(ranking_ordenado(catalogo, ventas))
                 mostrar_reposicion(reposicion_ordenada(catalogo))
                 cuenta_regresiva(5)
