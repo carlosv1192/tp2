@@ -158,6 +158,29 @@ def armar_ranking(catalogo, ventas):
             lista_de_ranking[posicion_en_ranking][RANKING_IMPORTE] += venta[IMPORTE_FINAL]
     return lista_de_ranking
 
+def armar_matriz(catalogo, ventas):
+    """Arma los importes vendidos por categoría y medio de pago.
+    Recibe el catálogo ordenado por código y el historial de ventas.
+    Pre: cada venta corresponde a un producto del catálogo y a un medio de pago válido.
+    Post: devuelve una matriz de categorías por medios de pago, sin modificar las listas.
+    """
+    matriz = []
+    for i in range(len(CATEGORIAS)):
+        fila = []
+        for j in range(len(MEDIOS_PAGO)):
+            fila.append(0)
+        matriz.append(fila)
+
+    for i in range(len(ventas)):
+        venta = ventas[i]
+        posicion_producto = buscar_por_codigo(catalogo, venta[CODIGO_VENTA])
+        categoria = catalogo[posicion_producto][CATEGORIA]
+        fila = categoria - 1
+        columna = venta[MEDIO_PAGO] - 1
+        matriz[fila][columna] += venta[IMPORTE_FINAL]
+
+    return matriz
+
 def buscar_en_ranking(ranking, nombre):
     """Busca el nombre del producto ingresado entre los productos ya cargados en el ranking.
     Pre:  recibe una lista y un nombre a buscar
