@@ -592,7 +592,7 @@ def mostrar_menu_principal():
     print("5) Tabla categoría x medio de pago.")
     print("6) Cerrar caja y salir")
 
-    opcion = pedir_entero_en_rango("Elija una opción: ", 1, 7)
+    opcion = pedir_entero_en_rango("Elija una opción: ", 1, 6)
     return opcion
 
 def menu_catalogo(catalogo):
