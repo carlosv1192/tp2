@@ -23,6 +23,7 @@ NUMERO, CODIGO_VENTA, CANTIDAD, MEDIO_PAGO, IMPORTE_FINAL = 0, 1, 2, 3, 4
 RANKING_NOMBRE, RANKING_UNIDADES, RANKING_IMPORTE = 0, 1, 2
 TOPE_DE_CODIGO = 9999
 TOPE_DE_STOCK = 9999
+CODIGO_PARA_CANCELAR = 0
 
 total_recaudado = 0
 cantidad_ventas = 0
@@ -36,7 +37,10 @@ cantidad_debito = 0
 cantidad_credito = 0
 
 def catalogo_inicial():
-    """Devuelve el catálogo de partida del kiosco (lista de listas)."""
+    """Devuelve el catálogo de partida del kiosco (lista de listas).
+    Pre: hay productos básicos cargados en el catálogo.
+    Post: devuelve el catálogo inicial.
+    """
     return [
         [305, "Alfajor triple",           1, 1500.0, 24],
         [112, "Agua saborizada 500 ml",   2, 1900.0, 10],
@@ -120,7 +124,7 @@ def ordenar(lista, campo, descendente):
  
 def buscar_extremo(lista, desde, hasta, campo, descendente):
     """Busca la posición del mínimo o máximo en
-    lista[desde]..lista[hasta] inclusive; compara por "campo".
+    lista[desde]..lista[hasta]; compara por "campo".
     Pre: 0 <= desde <= hasta < len(lista). "campo" es un índice válido
     para cada elemento de "lista".
     Post: devuelve la posición del elemento extremo (mínimo si descendente
@@ -141,7 +145,7 @@ def buscar_extremo(lista, desde, hasta, campo, descendente):
 
 def armar_ranking(catalogo, ventas):
     """Elabora una tabla de productos vendidos.
-    Pre:  recibe la lista de catálogo y la de ventas realizadas
+    Pre: recibe la lista de catálogo y la de ventas realizadas hasta ahora.
     Post: devuelve una lista de [nombre, unidades_vendidas, importe_total],
     un elemento por producto con al menos una venta.
     """
@@ -160,9 +164,8 @@ def armar_ranking(catalogo, ventas):
 
 def buscar_en_ranking(ranking, nombre):
     """Busca el nombre del producto ingresado entre los productos ya cargados en el ranking.
-    Pre:  recibe una lista y un nombre a buscar
-    Post: devuelve la posición donde está ese nombre en "ranking"
-    o -1 si todavía no se agregó.
+    Pre: recibe una lista y un nombre a buscar.
+    Post: devuelve la posición donde está ese nombre en "ranking" o -1 si todavía no se agregó.
     """
     for i in range(len(ranking)):
         if ranking[i][RANKING_NOMBRE] == nombre:
@@ -187,14 +190,14 @@ def mostrar_ranking(ranking):
     Post: imprime un renglón por producto o un mensaje de aviso si está vacía.
     No devuelve nada.
     """
-    print("\n===****** RANKING DEL DÍA ******===")
+    print("\n===****** RANKING DE PRODUCTOS VENDIDOS DEL DÍA ******===")
     if len(ranking) == 0:
         print("Todavía no se registraron ventas en el día. Pruebe luego de haber registrado ventas.")
         return
     for i in range(len(ranking)):
-        item = ranking[i]
-        importe = "$ " + formato_de_precio(item[RANKING_IMPORTE])
-        print(f"{i + 1}. {item[RANKING_NOMBRE]:<24}{item[RANKING_UNIDADES]:>4} un. {importe:>16}")
+        item_venta = ranking[i]
+        importe = "$ " + formato_de_precio(item_venta[RANKING_IMPORTE])
+        print(f"{i + 1}. {item_venta[RANKING_NOMBRE]:<24}{item_venta[RANKING_UNIDADES]:>4} un. {importe:>16}")
 
 def productos_a_reponer(catalogo):
     """Busca los productos con stock por debajo del mínimo.
@@ -219,7 +222,7 @@ def reposicion_ordenada(catalogo):
     return lista_de_reposicion
 
 def mostrar_reposicion(reposicion):
-    """Muestra al usuario los productos a reponer.
+    """Muestra al usuario los productos que debe reponer actualmente.
     Recibe: la lista de productos del catálogo con stock bajo el mínimo,
     ya ordenada de menor a mayor según el stock.
     Post: imprime un renglón por producto o avisa con un mensaje si no hay ninguno.
@@ -233,12 +236,38 @@ def mostrar_reposicion(reposicion):
         producto = reposicion[i]
         print(f"{producto[CODIGO]:<8}{producto[NOMBRE]:<26}Stock: {producto[STOCK]}")
 
+def reponer_stock(catalogo):
+    """Permite sumar unidades al stock de un producto que ya está en el catálogo.
+    Recibe: el catálogo.
+    Pre: el catálogo está ordenado por código (ascendente).
+    Post: si el código existe, suma las unidades ingresadas al stock de ese
+    producto, sin superar TOPE_DE_STOCK. Si se cancela (con el código 0) o el
+    stock ya está al máximo, no cambia nada. No devuelve nada.
+    """
+    codigo = pedir_entero_en_rango("Código del producto a reponer (ingrese 0 para cancelar): ", 0, TOPE_DE_CODIGO)
+    posicion = buscar_por_codigo(catalogo, codigo)
+    while codigo != CODIGO_PARA_CANCELAR and posicion == -1:
+        print("No existe un producto con ese código.")
+        codigo = pedir_entero_en_rango("Código del producto a reponer (ingrese 0 para cancelar): ", 0, TOPE_DE_CODIGO)
+        posicion = buscar_por_codigo(catalogo, codigo)
+    if codigo == CODIGO_PARA_CANCELAR:
+        print("Reposición cancelada.")
+        return
+    producto = catalogo[posicion]
+    stock_libre = TOPE_DE_STOCK - producto[STOCK]
+    if stock_libre == 0:
+        print("El producto ya está en el stock máximo. No necesita reponer actualmente.")
+        return
+    cantidad = pedir_entero_en_rango(f"Unidades a agregar (1 a {stock_libre}): ", 1, stock_libre)
+    producto[STOCK] = producto[STOCK] + cantidad
+    print(f"Stock de '{producto[NOMBRE]}': {producto[STOCK]} unidades.")        
+
 def totalizar_matriz(matriz):
     """Añade a una matriz una columna con el total de cada fila y una fila
     con el total de cada columna.
-    Recibe: una matriz (lista de listas, que no esté vacía).
-    Post: devuelve una matriz nueva con una fila y una columna más; la
-    esquina inferior derecha es la suma de todos los elementos.
+    Pre: recibe una matriz (lista de listas, que no esté vacía).
+    Post: devuelve una matriz nueva con una fila y una columna más luego de haber
+    realizado los cálculos de totales.
     No modifica la matriz recibida.
     """
     conjunto_totales = []
@@ -262,6 +291,7 @@ def totalizar_matriz(matriz):
 def mostrar_matriz(matriz):
     """Muestra la matriz categoría x medio de pago como tabla, con totales.
     Recibe: la matriz de len(CATEGORIAS) x len(MEDIOS_PAGO).
+    Pre: recibe una matriz válida.
     Post: imprime la tabla con la columna y la fila de totales (la suma auxiliar la hace
     totalizar_matriz). No devuelve nada.
     """
@@ -651,8 +681,9 @@ def menu_catalogo(catalogo):
         print("3) Buscar por nombre.")
         print("4) Inventario por categoría.")
         print("5) Agregar un producto para la venta.")
-        print("6) Volver al menú principal.")
-        opcion = pedir_entero_en_rango("Elija una opción: ", 1, 6)
+        print("6) Reponer stock de un producto.")
+        print("7) Volver al menú principal.")
+        opcion = pedir_entero_en_rango("Elija una opción: ", 1, 7)
 
         if opcion == 1:
             mostrar_catalogo(catalogo)
