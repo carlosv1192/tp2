@@ -181,6 +181,21 @@ def ranking_ordenado(catalogo, ventas):
     ordenar(ranking, RANKING_UNIDADES, True)
     return ranking
 
+def mostrar_ranking(ranking):
+    """Dispone el ranking de productos más vendidos.
+    Recibe: la lista [nombre, unidades, importe] ya ordenada por unidades.
+    Post: imprime un renglón por producto o un mensaje de aviso si está vacía.
+    No devuelve nada.
+    """
+    print("\n===****** RANKING DEL DÍA ******===")
+    if len(ranking) == 0:
+        print("Todavía no se registraron ventas en el día. Pruebe luego de haber registrado ventas.")
+        return
+    for i in range(len(ranking)):
+        item = ranking[i]
+        importe = "$ " + formato_de_precio(item[RANKING_IMPORTE])
+        print(f"{i + 1}. {item[RANKING_NOMBRE]:<24}{item[RANKING_UNIDADES]:>4} un. {importe:>16}")
+
 def productos_a_reponer(catalogo):
     """Busca los productos con stock por debajo del mínimo.
     Pre: recibe el catálogo con productos y su stock actual.
@@ -202,6 +217,70 @@ def reposicion_ordenada(catalogo):
     lista_de_reposicion = productos_a_reponer(catalogo)
     ordenar(lista_de_reposicion, STOCK, False)
     return lista_de_reposicion
+
+def mostrar_reposicion(reposicion):
+    """Muestra al usuario los productos a reponer.
+    Recibe: la lista de productos del catálogo con stock bajo el mínimo,
+    ya ordenada de menor a mayor según el stock.
+    Post: imprime un renglón por producto o avisa con un mensaje si no hay ninguno.
+    No devuelve nada.
+    """
+    print(f"\n===****** PRODUCTOS A REPONER (stock menor a {STOCK_MINIMO}) ******===")
+    if len(reposicion) == 0:
+        print("No hay productos para reponer. Pruebe luego de registrar un par de ventas.")
+        return
+    for i in range(len(reposicion)):
+        producto = reposicion[i]
+        print(f"{producto[CODIGO]:<8}{producto[NOMBRE]:<26}Stock: {producto[STOCK]}")
+
+def totalizar_matriz(matriz):
+    """Añade a una matriz una columna con el total de cada fila y una fila
+    con el total de cada columna.
+    Recibe: una matriz (lista de listas, que no esté vacía).
+    Post: devuelve una matriz nueva con una fila y una columna más; la
+    esquina inferior derecha es la suma de todos los elementos.
+    No modifica la matriz recibida.
+    """
+    conjunto_totales = []
+    for f in range(len(matriz)):
+        fila = []
+        suma = 0
+        for c in range(len(matriz[f])):
+            fila.append(matriz[f][c])
+            suma = suma + matriz[f][c]
+        fila.append(suma)
+        conjunto_totales.append(fila)
+    fila_totales = []
+    for c in range(len(conjunto_totales[0])):
+        suma = 0
+        for f in range(len(conjunto_totales)):
+            suma = suma + conjunto_totales[f][c]
+        fila_totales.append(suma)
+    conjunto_totales.append(fila_totales)
+    return conjunto_totales
+
+def mostrar_matriz(matriz):
+    """Muestra la matriz categoría x medio de pago como tabla, con totales.
+    Recibe: la matriz de len(CATEGORIAS) x len(MEDIOS_PAGO).
+    Post: imprime la tabla con la columna y la fila de totales (los suma
+    totalizar_matriz). No devuelve nada.
+    """
+    conjunto_totales = totalizar_matriz(matriz)
+    print("\n===****** TABLA DE CATEGORÍA x MEDIO DE PAGO ******===")
+    encabezado = f"{'Categoría':<12}"
+    for c in range(len(MEDIOS_PAGO)):
+        encabezado = encabezado + f"{MEDIOS_PAGO[c]:>14}"
+    encabezado = encabezado + f"{'TOTAL':>14}"
+    print(encabezado)
+    for f in range(len(conjunto_totales)):
+        if f < len(CATEGORIAS):
+            etiqueta = CATEGORIAS[f]
+        else:
+            etiqueta = "TOTAL"
+        renglon = f"{etiqueta:<12}"
+        for c in range(len(conjunto_totales[f])):
+            renglon = renglon + f"{formato_de_precio(conjunto_totales[f][c]):>14}"
+        print(renglon)
 
 def productos_de_categoria(catalogo, categoria):
     """Busca secuencialmente los productos de una categoría.
