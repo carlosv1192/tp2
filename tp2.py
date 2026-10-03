@@ -51,19 +51,19 @@ def catalogo_inicial():
     ]
 
 def mostrar_catalogo(catalogo):
-    """Permite ver el catálogo en formato de tabla.
+    """Permite ver el catálogo en formato de tabla con columnas alineadas.
     Recibe: el catálogo (lista de productos).
-    Pre: cada producto es una lista [codigo, nombre, categoria, precio, stock].
+    Pre: cada producto es una lista de [codigo, nombre, categoria, precio, stock].
     Post: imprime un renglón por producto, en el orden en que vienen en la lista.
     No modifica el catálogo ni devuelve nada.
     """
     print("\n****** CATÁLOGO DEL QUIOSCO ******")
-    print("Código | Nombre | Categoría | Precio | Stock")
+    print(f"{'Código':<8}{'Nombre':<26}{'Categoría':<12}{'Precio':>14}{'Stock':>8}")
     for i in range(len(catalogo)):
         producto = catalogo[i]
         categoria = CATEGORIAS[producto[CATEGORIA] - 1]
         precio = "$" + formato_de_precio(producto[PRECIO])
-        print(f"{producto[CODIGO]},{producto[NOMBRE]},{categoria},{precio},{producto[STOCK]}")
+        print(f"{producto[CODIGO]:<8}{producto[NOMBRE]:<26}{categoria:<12}{precio:>14}{producto[STOCK]:>8}")
 
 def buscar_por_codigo(catalogo, codigo):
     """Busca un producto por código con BÚSQUEDA BINARIA.
@@ -242,19 +242,19 @@ def totalizar_matriz(matriz):
     No modifica la matriz recibida.
     """
     conjunto_totales = []
-    for f in range(len(matriz)):
-        fila = []
+    for fila_aux in range(len(matriz)):
+        fila_nueva = []
         suma = 0
-        for c in range(len(matriz[f])):
-            fila.append(matriz[f][c])
-            suma = suma + matriz[f][c]
-        fila.append(suma)
-        conjunto_totales.append(fila)
+        for columna_aux in range(len(matriz[fila_aux])):
+            fila_nueva.append(matriz[fila_aux][columna_aux])
+            suma = suma + matriz[fila_aux][columna_aux]
+        fila_nueva.append(suma)
+        conjunto_totales.append(fila_nueva)
     fila_totales = []
-    for c in range(len(conjunto_totales[0])):
+    for columna_aux in range(len(conjunto_totales[0])):
         suma = 0
-        for f in range(len(conjunto_totales)):
-            suma = suma + conjunto_totales[f][c]
+        for fila_aux in range(len(conjunto_totales)):
+            suma = suma + conjunto_totales[fila_aux][columna_aux]
         fila_totales.append(suma)
     conjunto_totales.append(fila_totales)
     return conjunto_totales
@@ -262,24 +262,24 @@ def totalizar_matriz(matriz):
 def mostrar_matriz(matriz):
     """Muestra la matriz categoría x medio de pago como tabla, con totales.
     Recibe: la matriz de len(CATEGORIAS) x len(MEDIOS_PAGO).
-    Post: imprime la tabla con la columna y la fila de totales (los suma
+    Post: imprime la tabla con la columna y la fila de totales (la suma auxiliar la hace
     totalizar_matriz). No devuelve nada.
     """
     conjunto_totales = totalizar_matriz(matriz)
     print("\n===****** TABLA DE CATEGORÍA x MEDIO DE PAGO ******===")
     encabezado = f"{'Categoría':<12}"
-    for c in range(len(MEDIOS_PAGO)):
-        encabezado = encabezado + f"{MEDIOS_PAGO[c]:>14}"
+    for columna in range(len(MEDIOS_PAGO)):
+        encabezado = encabezado + f"{MEDIOS_PAGO[columna]:>14}"
     encabezado = encabezado + f"{'TOTAL':>14}"
     print(encabezado)
-    for f in range(len(conjunto_totales)):
-        if f < len(CATEGORIAS):
-            etiqueta = CATEGORIAS[f]
+    for fila in range(len(conjunto_totales)):
+        if fila < len(CATEGORIAS):
+            etiqueta = CATEGORIAS[fila]
         else:
             etiqueta = "TOTAL"
         renglon = f"{etiqueta:<12}"
-        for c in range(len(conjunto_totales[f])):
-            renglon = renglon + f"{formato_de_precio(conjunto_totales[f][c]):>14}"
+        for columna in range(len(conjunto_totales[fila])):
+            renglon = renglon + f"{formato_de_precio(conjunto_totales[fila][columna]):>14}"
         print(renglon)
 
 def productos_de_categoria(catalogo, categoria):
@@ -517,7 +517,7 @@ def categoria_producto():
     print("2) Bebidas")
     print("3) Almacén")
     print("4) Librería")
-    categoria = pedir_entero_en_rango("Ingrese el número de la categoría: ", 1, 4)
+    categoria = pedir_entero_en_rango("Ingrese el número de la categoría: ", 1, len(CATEGORIAS))
     return categoria
 
 def generar_tique(precio_unitario, cantidad_unidades, categoria, subtotal, descuento_monto, ajuste_medio_pago, medio_de_pago, importe_final, codigo_suerte):
