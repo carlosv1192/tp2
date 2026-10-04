@@ -362,7 +362,10 @@ def registrar_venta(catalogo, ventas):
     codigo_suerte = obtener_codigo_suerte(round(importe_final))
 
     numero_venta = len(ventas) + 1
-    generar_tique(numero_venta, producto, cantidad_unidades, subtotal, descuento_monto,
+    importe_tras_descuento = subtotal - descuento_monto
+    stock_restante = producto[STOCK] - cantidad_unidades
+    generar_tique(numero_venta, producto, cantidad_unidades, stock_restante,
+                  subtotal, descuento_monto, importe_tras_descuento,
                   ajuste_medio_pago, medio_de_pago, importe_final, codigo_suerte)
 
     producto[STOCK] -= cantidad_unidades
@@ -439,25 +442,29 @@ def categoria_producto():
     categoria = pedir_entero_en_rango("Ingrese el número de la categoría: ", 1, len(CATEGORIAS))
     return categoria
 
-def generar_tique(numero, producto, cantidad_unidades, subtotal, descuento_monto, ajuste_medio_pago, medio_de_pago, importe_final, codigo_suerte):
+def generar_tique(numero, producto, cantidad_unidades, stock_restante, subtotal,
+                  descuento_monto, importe_tras_descuento, ajuste_medio_pago,
+                  medio_de_pago, importe_final, codigo_suerte):
     """Muestra el tique de la venta en detalle. Simplemente imprime
     ordenadamente los valores que ya vienen calculados.
     Recibe: número de venta, el producto vendido (lista del catálogo), cantidad
-    de unidades, subtotal, descuento por monto, ajuste por medio de pago,
-    medio de pago, importe final y código de la suerte.
+    de unidades, stock restante, subtotal, descuento por monto, importe luego
+    del descuento por monto, ajuste por medio de pago, medio de pago, importe
+    final y código de la suerte.
     Devuelve: nada, solo imprime en pantalla.
     """
     print(f"===== TIQUE DE VENTA N.º {numero} =====")
-    print(f"Producto: {producto[NOMBRE]} ({CATEGORIAS[producto[CATEGORIA] - 1]})")
+    print(f"Producto: {producto[CODIGO]} - {producto[NOMBRE]} ({CATEGORIAS[producto[CATEGORIA] - 1]})")
     print(f"Cantidad: {cantidad_unidades} un. x ${formato_de_precio(producto[PRECIO])}")
+    print(f"Stock: {producto[STOCK]} -> {stock_restante}")
     print(f"Subtotal: ${formato_de_precio(subtotal)}")
     if descuento_monto > 0:
         print(f"Descuento por monto ({PORCENTAJE_DESCUENTO_MONTO}%): -${formato_de_precio(descuento_monto)}")
     print(f"Medio de pago: {MEDIOS_PAGO[medio_de_pago - 1]}")
     if ajuste_medio_pago < 0:
-        print(f"Descuento por pago en efectivo ({PORCENTAJE_DESCUENTO_EFECTIVO}%): -${formato_de_precio(abs(ajuste_medio_pago))}")
+        print(f"Descuento por pago en efectivo ({PORCENTAJE_DESCUENTO_EFECTIVO}% sobre ${formato_de_precio(importe_tras_descuento)}): -${formato_de_precio(abs(ajuste_medio_pago))}")
     elif ajuste_medio_pago > 0:
-        print(f"Recargo por pago con crédito ({PORCENTAJE_RECARGO_CREDITO}%): +${formato_de_precio(ajuste_medio_pago)}")
+        print(f"Recargo por pago con crédito ({PORCENTAJE_RECARGO_CREDITO}% sobre ${formato_de_precio(importe_tras_descuento)}): +${formato_de_precio(ajuste_medio_pago)}")
     print(f"IMPORTE FINAL: ${formato_de_precio(importe_final)}")
     print(f"Código de la suerte: {codigo_suerte}")
     print("========================")
